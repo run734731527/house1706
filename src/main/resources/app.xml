@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	 xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop.xsd
+	http://www.springframework.org/schema/tx
+	http://www.springframework.org/schema/tx/spring-tx.xsd">
+	<!-- 通过注解的方式配置，扫描注解的包的位置 -->
+	<!-- 基于注解配置哪些对象要纳入IoC容器的管理（这里已将@Controller和@ControllerAdvice排除） -->
+	<context:component-scan base-package="com.qfedu.house">
+	     <!--消息转换器 -->
+		<context:exclude-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+		<context:exclude-filter type="annotation"
+			expression="org.springframework.web.bind.annotation.ControllerAdvice" />
+	</context:component-scan>
+	<context:annotation-config />
+    <!-- 通过自动生成代理实现AOP的功能 -->
+    <!-- 自己写切面才用这句话 -->
+    <!-- 
+	<aop:aspectj-autoproxy />
+    -->
+    <!-- 配置hibernate的SessionFactory -->
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<!-- 告诉他那些地方要扫描映射，要跟数据库连接的 -->
+		<property name="packagesToScan" value="com.qfedu.house.domain" />
+		<property name="hibernateProperties">
+			<value>
+				hibernate.dialect=org.hibernate.dialect.MySQL57Dialect
+				hibernate.show_sql=true
+				hibernate.format_sql=true
+				javax.persistence.validation.mode=none
+				<!-- 最后一条是让hibernate不验证数据（写在实体上的验证注解hibernate也能识别） -->
+				<!-- hibernate.current_session_context_class=thread -->
+			</value>
+		</property>
+	</bean>
+    <!-- 配置数据库的连接池 (DBCP2)-->
+	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<property name="url" value="jdbc:mysql://localhost:3306/house" />
+		<property name="maxWaitMillis" value="5000" />
+		<property name="maxTotal" value="100" />
+		<property name="initialSize" value="10" />
+		<property name="password" value="123456" />
+		<property name="username" value="root" />
+	</bean>
+	<!-- 配置Spring提供的hibernate事务管理器 -->
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+		<!-- 通过setter注入 注入了SessionFactory对象 -->
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+	<!-- 配置使用说明式事务 -->
+	<!--id为transactionManager可以不写名字 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	<!-- xml方式的配置 -->
+	<!-- <bean id="txBean" class="com.qfedu.springioc.aspect.TxAspect" /> <aop:config> 
+		<aop:aspect id="txAspect" ref="txBean"> <aop:pointcut id="txPointcut" expression="execution(* 
+		com.qfedu.springioc.service.impl.*.*(..))" /> <aop:around method="doTransaction" 
+		pointcut-ref="txPointcut" /> </aop:aspect> </aop:config> -->
+</beans>
+
+
+
+
+
